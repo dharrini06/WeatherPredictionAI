@@ -1,5 +1,5 @@
 # ================================================================
-# ADVANCED PROJECT: Predicting Weather Conditions Using Probabilistic Reasoning
+# PROJECT: Predicting Weather Conditions Using Probabilistic Reasoning
 # ================================================================
 
 # Step 1: Import Libraries
@@ -159,5 +159,5 @@ weather_data.to_csv("advanced_weather_data.csv", index=False)
 print("✅ Data saved to 'advanced_weather_data.csv'")
 
 # ================================================================
-# END OF CLEAN ADVANCED PROJECT CODE
+# END PROJECT CODE
 # ================================================================
