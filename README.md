@@ -13,4 +13,6 @@ This project predicts whether people will play outdoor games based on weather co
 
 <img width="628" height="351" alt="Image" src="https://github.com/user-attachments/assets/2e85fd23-3f76-4498-b9ca-2afafe6dee25" />
 
+<img width="869" height="565" alt="Image" src="https://github.com/user-attachments/assets/ccd0529d-af25-4d36-bae4-299c0480cb76" />
+
 <img width="1362" height="717" alt="Image" src="https://github.com/user-attachments/assets/ecf0c37e-5b2a-41c4-b205-a511f461861e" />
