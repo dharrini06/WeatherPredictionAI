@@ -8,3 +8,5 @@ This project predicts whether people will play outdoor games based on weather co
 *OUTPUT:*
 
 <img width="682" height="155" alt="Image" src="https://github.com/user-attachments/assets/3bd5c711-2497-40d8-8c2c-f396076c2c4e" />
+
+<img width="571" height="347" alt="Image" src="https://github.com/user-attachments/assets/5b850700-56cd-46df-a205-59c3f8de85e1" />
