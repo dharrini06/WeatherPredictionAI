@@ -1,7 +1,3 @@
-# ================================================================
-# PROJECT: Predicting Weather Conditions Using Probabilistic Reasoning
-# ================================================================
-
 # Step 1: Import Libraries
 import pandas as pd
 import numpy as np
@@ -9,22 +5,15 @@ import random
 import matplotlib.pyplot as plt
 import seaborn as sns
 import networkx as nx
+from itertools import product
 from sklearn.model_selection import train_test_split
 from sklearn.naive_bayes import CategoricalNB
 from sklearn.metrics import accuracy_score, confusion_matrix, classification_report
 from pgmpy.models import DiscreteBayesianNetwork
 from pgmpy.estimators import MaximumLikelihoodEstimator
 from pgmpy.inference import VariableElimination
-import logging
 
-# ================================================================
-# Step 1.1: Silence pgmpy INFO logs
-# ================================================================
-logging.getLogger("pgmpy").setLevel(logging.WARNING)
-
-# ================================================================
 # Step 2: Generate Synthetic Weather Dataset
-# ================================================================
 def generate_weather_data(n=2000, seed=42):
     random.seed(seed)
     np.random.seed(seed)
@@ -35,7 +24,7 @@ def generate_weather_data(n=2000, seed=42):
         humidity = random.choices(['High', 'Normal'], [0.55, 0.45])[0]
         wind = random.choices(['Weak', 'Strong'], [0.65, 0.35])[0]
 
-        # Conditional logic
+        # Conditional logic for Play
         if outlook == 'Sunny' and humidity == 'High':
             play = 'No'
         elif outlook == 'Rain' and wind == 'Strong':
@@ -50,33 +39,25 @@ def generate_weather_data(n=2000, seed=42):
         data.append([outlook, temp, humidity, wind, play])
     return pd.DataFrame(data, columns=['Outlook', 'Temperature', 'Humidity', 'Wind', 'Play'])
 
-
+# Generate data
 weather_data = generate_weather_data()
 print("Sample Weather Data:\n", weather_data.head())
 
-# ================================================================
-# Step 3: Encode categorical data for ML part (silences FutureWarning)
-# ================================================================
-data_encoded = weather_data.copy()
-mapping = {
+# Step 3: Encode categorical data for Naive Bayes
+data_encoded = weather_data.replace({
     'Sunny': 0, 'Overcast': 1, 'Rain': 2,
     'Hot': 0, 'Mild': 1, 'Cool': 2,
     'High': 0, 'Normal': 1,
     'Weak': 0, 'Strong': 1,
     'No': 0, 'Yes': 1
-}
-data_encoded = data_encoded.replace(mapping).infer_objects(copy=False)
+}).infer_objects(copy=False)
 
-# ================================================================
-# Step 4: Split data for Naive Bayes comparison
-# ================================================================
+# Step 4: Split data for Naive Bayes
 X = data_encoded[['Outlook', 'Temperature', 'Humidity', 'Wind']]
 y = data_encoded['Play']
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.25, random_state=42)
 
-# ================================================================
 # Step 5: Train Naive Bayes Classifier
-# ================================================================
 nb_model = CategoricalNB()
 nb_model.fit(X_train, y_train)
 y_pred = nb_model.predict(X_test)
@@ -86,9 +67,7 @@ print("Accuracy:", round(accuracy_score(y_test, y_pred) * 100, 2), "%")
 print("Confusion Matrix:\n", confusion_matrix(y_test, y_pred))
 print("Classification Report:\n", classification_report(y_test, y_pred))
 
-# ================================================================
-# Step 6: Bayesian Network Model
-# ================================================================
+# Step 6: Build Bayesian Network
 model = DiscreteBayesianNetwork([
     ('Outlook', 'Play'),
     ('Temperature', 'Play'),
@@ -97,17 +76,13 @@ model = DiscreteBayesianNetwork([
 ])
 model.fit(weather_data, estimator=MaximumLikelihoodEstimator)
 
-# ================================================================
-# Step 7: Inference Setup
-# ================================================================
+# Step 7: Inference
 infer = VariableElimination(model)
 print("\n--- PROBABILISTIC REASONING MODEL (Bayesian Network) ---")
 print("Conditional Probability Table for 'Play':")
 print(model.get_cpds('Play'))
 
-# ================================================================
-# Step 8: Visualize Bayesian Network Structure
-# ================================================================
+# Step 8: Visualize Bayesian Network
 plt.figure(figsize=(7, 5))
 G = nx.DiGraph()
 G.add_edges_from(model.edges())
@@ -116,9 +91,7 @@ nx.draw(G, pos, with_labels=True, node_size=4000, node_color='lightblue', arrows
 plt.title("Bayesian Network Structure", fontsize=14)
 plt.show()
 
-# ================================================================
-# Step 9: Function to Predict Using Bayesian Inference
-# ================================================================
+# Step 9: Function to predict using Bayesian inference
 def predict_play(Outlook=None, Temperature=None, Humidity=None, Wind=None):
     evidence = {}
     if Outlook: evidence['Outlook'] = Outlook
@@ -127,9 +100,7 @@ def predict_play(Outlook=None, Temperature=None, Humidity=None, Wind=None):
     if Wind: evidence['Wind'] = Wind
     return infer.query(variables=['Play'], evidence=evidence, show_progress=False)
 
-# ================================================================
-# Step 10: Predict a Few Scenarios
-# ================================================================
+# Step 10: Predict a few scenarios
 print("\n--- Bayesian Network Predictions ---")
 scenarios = [
     {'Outlook': 'Sunny', 'Temperature': 'Hot', 'Humidity': 'High', 'Wind': 'Weak'},
@@ -139,25 +110,29 @@ scenarios = [
 
 for i, s in enumerate(scenarios, 1):
     pred = predict_play(**s)
-    print(f"🌤️ Scenario {i}: {s}")
-    print(pred)
-    print("-" * 60)
+    print(f"Scenario {i}: {s} ->\n{pred}\n")
 
-# ================================================================
-# Step 11: Heatmap Visualization of CPT
-# ================================================================
-sns.heatmap(pd.DataFrame(model.get_cpds('Play').values), annot=True, cmap="YlGnBu")
+# Step 11: Flatten CPT and plot readable heatmap
+cpd_play = model.get_cpds('Play')
+parents = cpd_play.variables[1:]  # all parents
+parent_states = [cpd_play.state_names[parent] for parent in parents]
+
+# Flatten CPT into 2D DataFrame with combined parent states
+rows = list(product(*parent_states))
+row_labels = [' | '.join(r) for r in rows]  # Combine parent states into single string
+df_cpt = pd.DataFrame(cpd_play.values.reshape(len(rows), -1), 
+                      columns=cpd_play.state_names['Play'], index=row_labels)
+
+plt.figure(figsize=(12, 10))
+sns.heatmap(df_cpt, annot=True, fmt=".2f", cmap="YlGnBu", cbar_kws={'label': 'Probability'})
 plt.title("Conditional Probability Table - 'Play'")
-plt.xlabel("Play States")
-plt.ylabel("Probability Index")
+plt.xlabel("Play Outcome")
+plt.ylabel("Parent States Combination")
+plt.xticks(rotation=0)
+plt.yticks(rotation=0)
+plt.tight_layout()
 plt.show()
 
-# ================================================================
-# Step 12: Save Outputs
-# ================================================================
+# Step 12: Save dataset
 weather_data.to_csv("advanced_weather_data.csv", index=False)
 print("✅ Data saved to 'advanced_weather_data.csv'")
-
-# ================================================================
-# END PROJECT CODE
-# ================================================================
